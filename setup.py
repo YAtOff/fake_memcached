@@ -1,45 +1,45 @@
-from distutils.core import setup
-from distutils.cmd import Command
-from distutils import log
-import re
-import doctest
-import mockcache
+#!/usr/bin/env python
 
+"""The setup script."""
 
-class test(Command):
-    """Run unit tests."""
+from setuptools import setup, find_packages
 
-    description = __doc__
-    user_options = []
+with open('README.rst') as readme_file:
+    readme = readme_file.read()
 
-    def initialize_options(self):
-        pass
+with open('HISTORY.rst') as history_file:
+    history = history_file.read()
 
-    def finalize_options(self):
-        pass
+requirements = []
 
-    def run(self):
-        doctest.testmod(mockcache)
+test_requirements = []
 
-
-setup(name="mockcache",
-      description="The Python dictionary-based mock memcached client library.",
-      long_description=mockcache.__doc__,
-      version=mockcache.__version__,
-      author=mockcache.__author__,
-      author_email=mockcache.__email__,
-      maintainer=mockcache.__author__,
-      maintainer_email=mockcache.__email__,
-      url='https://github.com/lunant/mockcache',
-      py_modules=["mockcache"],
-      cmdclass={"test": test},
-      license=mockcache.__license__,
-      classifiers=["Development Status :: 4 - Beta",
-                   "Intended Audience :: Developers",
-                   "License :: OSI Approved :: MIT License",
-                   "Operating System :: OS Independent",
-                   "Programming Language :: Python",
-                   "Topic :: Software Development :: Testing",
-                   "Topic :: Software Development :: "
-                   "Libraries :: Python Modules"])
-
+setup(
+    author="Yavor Atov",
+    author_email='yavor.atov@gmail.com',
+    python_requires='>=3.6',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Apache Software License',
+        'Natural Language :: English',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+    ],
+    description="Dict based implementation of memcached",
+    install_requires=requirements,
+    license="Apache Software License 2.0",
+    long_description=readme + '\n\n' + history,
+    include_package_data=True,
+    keywords='fake_memcached',
+    name='fake_memcached',
+    packages=find_packages(include=['fake_memcached', 'fake_memcached.*']),
+    test_suite='tests',
+    tests_require=test_requirements,
+    url='https://github.com/YAtOff/fake_memcached',
+    version='0.1.0',
+    zip_safe=False,
+)

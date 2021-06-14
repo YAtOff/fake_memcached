@@ -30,18 +30,18 @@ tests. It implements expiration also. NOT THREAD-SAFE.  ::
         import memcache
     except ImportError:
         import warnings
-        import mockcache as memcache
-        warnings.warn("imported mockcache instead of memcache; cannot find "
+        import fake_memcached jas memcache
+        warnings.warn("imported fake_memcached instead of memcache; cannot find "
                       "memcache module")
 
     mc = memcache.Client(["127.0.0.1:11211"])
 
 This module and other memcached client libraries have the same behavior.
 
->>> from mockcache import Client
+>>> from fake_memcached.fake_memcached import Client
 >>> mc = Client()
 >>> mc
-<mockcache.Client {}>
+<fake_memcached.fake_memcached.Client {}>
 >>> mc.get("a")
 >>> mc.get("a") is None
 True
@@ -50,75 +50,75 @@ True
 >>> mc.get("a")
 '1234'
 >>> mc
-<mockcache.Client {'a': ('1234', None)}>
+<fake_memcached.fake_memcached.Client {'a': ('1234', None)}>
 >>> mc.add("a", "1111")
 0
 >>> mc.get("a")
 '1234'
 >>> mc
-<mockcache.Client {'a': ('1234', None)}>
+<fake_memcached.fake_memcached.Client {'a': ('1234', None)}>
 >>> mc.replace("a", "2222")
 1
 >>> mc.get("a")
 '2222'
 >>> mc
-<mockcache.Client {'a': ('2222', None)}>
+<fake_memcached.fake_memcached.Client {'a': ('2222', None)}>
 >>> mc.append("a", "3")
 1
 >>> mc.get("a")
 '22223'
 >>> mc
-<mockcache.Client {'a': ('22223', None)}>
+<fake_memcached.fake_memcached.Client {'a': ('22223', None)}>
 >>> mc.prepend("a", "1")
 1
 >>> mc.get("a")
 '122223'
 >>> mc
-<mockcache.Client {'a': ('122223', None)}>
+<fake_memcached.fake_memcached.Client {'a': ('122223', None)}>
 >>> mc.incr("a")
 122224
 >>> mc.get("a")
 122224
 >>> mc
-<mockcache.Client {'a': (122224, None)}>
+<fake_memcached.fake_memcached.Client {'a': (122224, None)}>
 >>> mc.incr("a", 10)
 122234
 >>> mc.get("a")
 122234
 >>> mc
-<mockcache.Client {'a': (122234, None)}>
+<fake_memcached.fake_memcached.Client {'a': (122234, None)}>
 >>> mc.decr("a")
 122233
 >>> mc.get("a")
 122233
 >>> mc
-<mockcache.Client {'a': (122233, None)}>
+<fake_memcached.fake_memcached.Client {'a': (122233, None)}>
 >>> mc.decr("a", 5)
 122228
 >>> mc.get("a")
 122228
 >>> mc
-<mockcache.Client {'a': (122228, None)}>
+<fake_memcached.fake_memcached.Client {'a': (122228, None)}>
 >>> mc.replace("b", "value")
 0
 >>> mc.get("b")
 >>> mc.get("b") is None
 True
 >>> mc
-<mockcache.Client {'a': (122228, None)}>
+<fake_memcached.fake_memcached.Client {'a': (122228, None)}>
 >>> mc.add("b", "value", 5)
 1
 >>> mc.get("b")
 'value'
 >>> mc  # doctest: +ELLIPSIS
-<mockcache.Client {'a': (122228, None), 'b': ('value', ...)}>
+<fake_memcached.fake_memcached.Client {'a': (122228, None), 'b': ('value', ...)}>
 >>> import time
 >>> time.sleep(6)
 >>> mc.get("b")
 >>> mc.get("b") is None
 True
 >>> mc
-<mockcache.Client {'a': (122228, None)}>
+<fake_memcached.fake_memcached.Client {'a': (122228, None)}>
 >>> mc.set("c", "value")
 1
 >>> mc.get_multi(["a", "b", "c"])
@@ -138,26 +138,21 @@ True
 True
 >>> mc.set("a b c", 123) #doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
-MockcachedKeyCharacterError: Control characters not allowed
+FakeMemcachedKeyCharacterError: Control characters not allowed
 >>> mc.set(None, 123) #doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
-MockcachedKeyNoneError: Key is None
+FakeMemcachedKeyNoneError: Key is None
 >>> mc.set(123, 123) #doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
-MockcachedKeyTypeError: Key must be str()'s
->>> mc.set(u"a", 123) #doctest: +IGNORE_EXCEPTION_DETAIL
+FakeMemcachedKeyTypeError: Key must be str()'s
+>>> mc.set(b"a", 123) #doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
-MockcachedKeyTypeError: Key must be str()'s, not unicode.
+FakeMemcachedKeyTypeError: Key must be str()'s, not bytes.
 >>> mc.set("a" * 251, 123) #doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
-MockcachedKeyLengthError: Key length is > ...
+FakeMemcachedKeyLengthError: Key length is > ...
 
 """
-
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
 
 import datetime
 import copy
@@ -173,10 +168,10 @@ __version__ = "1.0.3_alpha"
 
 
 SERVER_MAX_KEY_LENGTH = 250
-SERVER_MAX_VALUE_LENGTH = 1024*1024
+SERVER_MAX_VALUE_LENGTH = 1024 * 1024
 
 
-class Client(object):
+class Client:
     """Dictionary-based mock memcached client. Almost like other Python
     memcached client libraries' interface.
 
@@ -185,17 +180,22 @@ class Client(object):
     __slots__ = ("dictionary", "__dict__")
 
     # exceptions for Client
-    class MockcachedKeyError(Exception):
+    class FakeMemcachedKeyError(Exception):
         pass
-    class MockcachedKeyLengthError(MockcachedKeyError):
+
+    class FakeMemcachedKeyLengthError(FakeMemcachedKeyError):
         pass
-    class MockcachedKeyCharacterError(MockcachedKeyError):
+
+    class FakeMemcachedKeyCharacterError(FakeMemcachedKeyError):
         pass
-    class MockcachedKeyNoneError(MockcachedKeyError):
+
+    class FakeMemcachedKeyNoneError(FakeMemcachedKeyError):
         pass
-    class MockcachedKeyTypeError(MockcachedKeyError):
+
+    class FakeMemcachedKeyTypeError(FakeMemcachedKeyError):
         pass
-    class MockcachedStringEncodingError(Exception):
+
+    class FakeMemcachedStringEncodingError(Exception):
         pass
 
     def __init__(self, *args, **kwargs):
@@ -243,8 +243,10 @@ class Client(object):
 
         """
         try:
-            self.dictionary[key] = str(self.dictionary[key][0]) + val, \
-                                   self.dictionary[key][1]
+            self.dictionary[key] = (
+                str(self.dictionary[key][0]) + val,
+                self.dictionary[key][1],
+            )
         except KeyError:
             return 0
         else:
@@ -256,8 +258,10 @@ class Client(object):
 
         """
         try:
-            self.dictionary[key] = val + str(self.dictionary[key][0]), \
-                                   self.dictionary[key][1]
+            self.dictionary[key] = (
+                val + str(self.dictionary[key][0]),
+                self.dictionary[key][1],
+            )
         except KeyError:
             return 0
         else:
@@ -293,11 +297,11 @@ class Client(object):
         self.dictionary[key] = val, time
         return 1
 
-    def set_multi(self, mapping, time=0, key_prefix=b''):
+    def set_multi(self, mapping, time=0, key_prefix=""):
         """Sets all the key-value pairs in `mapping`. If `key_prefix` is
         given, it is prepended to all keys in `mapping`."""
-        for key, value in mapping.items():
-            self.set(b'{0}{1}'.format(key_prefix, key), value, time)
+        for key, value in list(mapping.items()):
+            self.set(key_prefix + key, value, time)
         return []
 
     def get(self, key):
@@ -313,7 +317,7 @@ class Client(object):
                 return
             return copy.deepcopy(val)
 
-    def get_multi(self, keys, key_prefix=b''):
+    def get_multi(self, keys, key_prefix=""):
         """Retrieves values of the `keys` at once from the internal
         dictionary. If `key_prefix` is given, it is prepended to all
         keys before retrieving them.
@@ -321,21 +325,25 @@ class Client(object):
         dictionary = self.dictionary
 
         if not isinstance(keys, collections.Sequence):
-            raise TypeError("object of type '{0}' has no len()".format(type(keys).__name__))
+            raise TypeError(
+                "object of type '{0}' has no len()".format(type(keys).__name__)
+            )
 
-        prefixed_keys = [(key, b'{0}{1}'.format(key_prefix, key))
-                         for key in keys]
-        pairs = ((key, self.dictionary[prefixed])
-                  for (key, prefixed) in prefixed_keys
-                  if prefixed in dictionary)
+        prefixed_keys = [(key, key_prefix + key) for key in keys]
+        pairs = (
+            (key, self.dictionary[prefixed])
+            for (key, prefixed) in prefixed_keys
+            if prefixed in dictionary
+        )
         now = datetime.datetime.now
-        return dict((key, copy.deepcopy(value)) for key, (value, exp) in pairs
-                                                if not exp or exp > now())
+        return dict(
+            (key, copy.deepcopy(value))
+            for key, (value, exp) in pairs
+            if not exp or exp > now()
+        )
 
     def delete_multi(self, keys):
-        """Deletes the `keys` from the dictionary
-
-        """
+        """Deletes the `keys` from the dictionary"""
         result = True
         for key in keys:
             result = result and self.delete(key)
@@ -358,22 +366,24 @@ class Client(object):
 
 def check_key(key, key_extra_len=0):
     """Checks sanity of key. Fails if:
-        Key length is > SERVER_MAX_KEY_LENGTH (Raises MockcachedKeyLengthError).
-        Contains control characters  (Raises MockcachedKeyCharacterError).
-        Is not a string (Raises MockcachedKeyTypeError)
-        Is None (Raises MockcachedKeyNoneError)
+    Key length is > SERVER_MAX_KEY_LENGTH (Raises FakeMemcachedKeyLengthError).
+    Contains control characters  (Raises FakeMemcachedKeyCharacterError).
+    Is not a string (Raises FakeMemcachedKeyTypeError)
+    Is None (Raises FakeMemcachedKeyNoneError)
     """
     if type(key) == tuple:
         key = key[1]
     if not key:
-        raise Client.MockcachedKeyNoneError("Key is None")
+        raise Client.FakeMemcachedKeyNoneError("Key is None")
     if not isinstance(key, str):
-        raise Client.MockcachedKeyTypeError("Key must be str()'s")
+        raise Client.FakeMemcachedKeyTypeError("Key must be str()'s")
 
     if len(key) + key_extra_len > SERVER_MAX_KEY_LENGTH:
-         raise Client.MockcachedKeyLengthError("Key length is > %s" % \
-                                                 SERVER_MAX_KEY_LENGTH)
+        raise Client.FakeMemcachedKeyLengthError(
+            "Key length is > %s" % SERVER_MAX_KEY_LENGTH
+        )
     for char in key:
         if ord(char) < 33 or ord(char) == 127:
-            raise Client.MockcachedKeyCharacterError("Control characters not "
-                                                     "allowed")
+            raise Client.FakeMemcachedKeyCharacterError(
+                "Control characters not " "allowed"
+            )
