@@ -28,6 +28,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     description="Dict based implementation of memcached",
     install_requires=requirements,
@@ -40,6 +41,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/YAtOff/fake_memcached',
-    version='0.1.0',
+    version='0.1.1',
     zip_safe=False,
 )

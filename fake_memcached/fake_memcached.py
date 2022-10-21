@@ -156,7 +156,7 @@ FakeMemcachedKeyLengthError: Key length is > ...
 
 import datetime
 import copy
-import collections
+import collections.abc
 
 
 __author__ = "Hong Minhee <http://hongminhee.org/>"
@@ -324,7 +324,7 @@ class Client:
         """
         dictionary = self.dictionary
 
-        if not isinstance(keys, collections.Sequence):
+        if not isinstance(keys, collections.abc.Sequence):
             raise TypeError(
                 "object of type '{0}' has no len()".format(type(keys).__name__)
             )
